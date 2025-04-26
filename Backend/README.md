@@ -14,6 +14,8 @@ This is the backend for **NoteBookOne**, powering PDF uploads, vector search, an
 
 ---
 
+## Use the client_scripts.py CLI (created using gpt) to test the api locally without running a frontend (supports everything).
+
 ## 🛠️ Setup
 
 ```sh
