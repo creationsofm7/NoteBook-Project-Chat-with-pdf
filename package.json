@@ -1,0 +1,13 @@
+{
+  "name": "notebook-monorepo",
+  "private": true,
+  "workspaces": [
+    "Frontend"
+  ],
+  "scripts": {
+    "dev:frontend": "npm --prefix Frontend run dev",
+    "build:frontend": "npm --prefix Frontend run build",
+    "dev:backend": "cd Backend && uvicorn fastapi_app:app --reload",
+    "build:backend": "echo 'No build step for backend'"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "name": "notebookone",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "start": "vite preview",
+    "typecheck": "react-router typegen && tsc"
+  },
+  "dependencies": {
+    "@react-router/node": "^7.5.2",
+    "@react-router/serve": "^7.5.2",
+    "@uppy/core": "^4.4.4",
+    "@uppy/dashboard": "^4.3.3",
+    "@uppy/drag-drop": "^4.1.2",
+    "@uppy/file-input": "^4.1.2",
+    "@uppy/progress-bar": "^4.2.1",
+    "@uppy/react": "^4.2.3",
+    "@uppy/remote-sources": "^2.3.2",
+    "@uppy/tus": "^4.2.2",
+    "axios": "^1.9.0",
+    "isbot": "^5.1.17",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router": "^7.5.2"
+  },
+  "devDependencies": {
+    "@react-router/dev": "^7.5.2",
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/node": "^20",
+    "@types/react": "^19.0.1",
+    "@types/react-dom": "^19.0.1",
+    "react-router-devtools": "^1.1.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.3.3",
+    "vite-tsconfig-paths": "^5.1.4"
+  }
+}
