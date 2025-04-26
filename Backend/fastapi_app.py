@@ -15,10 +15,14 @@ from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
 import dotenv
+
 dotenv.load_dotenv()
 
+# Ensure necessary directories exist for uploads and embeddings
 os.makedirs("uploads", exist_ok=True)
 os.makedirs("embeddings", exist_ok=True)
+
+# Retrieve OpenAI API key from environment variables
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
     raise RuntimeError("OPENAI_API_KEY environment variable not set")
@@ -39,6 +43,8 @@ CREATE TABLE IF NOT EXISTS pdf_metadata (
 conn.commit()
 
 app = FastAPI(title="NOTEBOOK_API")
+
+# Configure CORS middleware for cross-origin requests
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*", "http://localhost:5173", "http://127.0.0.1:5173"],
@@ -48,34 +54,64 @@ app.add_middleware(
 )
 
 class PdfUploadResponse(BaseModel):
+    """
+    Response model for PDF upload endpoint.
+    """
     document_id: str
     message: str
 
 class DocumentListResponse(BaseModel):
+    """
+    Response model for listing uploaded documents.
+    """
     document_id: str
     filename: str
     upload_date: Optional[str] = None
     size: Optional[int] = None
 
 class QueryRequest(BaseModel):
+    """
+    Request model for querying documents.
+    """
     document_ids: List[str]  
     query: str
 
 class QueryResponse(BaseModel):
+    """
+    Response model for query results.
+    """
     answer: str
     sources: List[str]
 
+# In-memory stores for vector stores and chat histories
 documents = {}  # {document_id: {"vector_store": vs, "chat_history": []}}
 multi_chat_histories = {}  # {(doc_id1, doc_id2, ...): chat_history}
 merged_vector_stores = {}  # {(doc_id1, doc_id2, ...): merged_vs}
 
 def extract_text(pdf_path: str) -> str:
+    """
+    Extracts text from a PDF file and returns it as markdown.
+    Args:
+        pdf_path (str): Path to the PDF file.
+    Returns:
+        str: Extracted markdown text.
+    Raises:
+        HTTPException: If extraction fails.
+    """
     try:
         return pymupdf4llm.to_markdown(pdf_path)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error extracting text: {str(e)}")
 
 def create_vector_store(text: str, document_id: str):
+    """
+    Splits text into chunks, generates embeddings, and creates a FAISS vector store.
+    Args:
+        text (str): The text to embed.
+        document_id (str): Unique identifier for the document.
+    Returns:
+        FAISS: The created vector store.
+    """
     chunks = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200).split_text(text)
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
     vs = FAISS.from_texts(chunks, embeddings)
@@ -83,12 +119,26 @@ def create_vector_store(text: str, document_id: str):
     return vs
 
 def process_pdf(file_path: str, document_id: str):
+    """
+    Processes a PDF file: extracts text and creates a vector store.
+    Args:
+        file_path (str): Path to the PDF file.
+        document_id (str): Unique identifier for the document.
+    """
     text = extract_text(file_path)
     vs = create_vector_store(text, document_id)
     documents[document_id] = {"vector_store": vs, "chat_history": []}
 
 def merge_vector_stores(vector_stores):
-    # Merge multiple FAISS vector stores into one, avoiding duplicate doc IDs
+    """
+    Merges multiple FAISS vector stores into one.
+    Args:
+        vector_stores (list): List of FAISS vector stores.
+    Returns:
+        FAISS: The merged vector store.
+    Raises:
+        HTTPException: If no vector stores are provided.
+    """
     if not vector_stores:
         raise HTTPException(status_code=400, detail="No vector stores to merge")
     base_vs = vector_stores[0]
@@ -99,6 +149,15 @@ def merge_vector_stores(vector_stores):
     return base_vs
 
 def load_vector_store(document_id: str):
+    """
+    Loads a vector store from memory or disk for a given document ID.
+    Args:
+        document_id (str): Unique identifier for the document.
+    Returns:
+        FAISS: The loaded vector store.
+    Raises:
+        HTTPException: If the vector store does not exist.
+    """
     if document_id in documents:
         return documents[document_id]["vector_store"]
     if not os.path.exists(f"embeddings/{document_id}"):
@@ -110,6 +169,17 @@ def load_vector_store(document_id: str):
 
 @app.post("/upload/", response_model=List[PdfUploadResponse])
 async def upload_pdf(background_tasks: BackgroundTasks, files: List[UploadFile] = File(...)):
+    """
+    Endpoint to upload one or more PDF files.
+    Stores files, extracts metadata, and starts background processing.
+    Args:
+        background_tasks (BackgroundTasks): FastAPI background task manager.
+        files (List[UploadFile]): List of uploaded PDF files.
+    Returns:
+        List[PdfUploadResponse]: List of upload responses.
+    Raises:
+        HTTPException: If a non-PDF file is uploaded.
+    """
     results = []
     for file in files:
         if not file.filename.lower().endswith('.pdf'):
@@ -133,6 +203,11 @@ async def upload_pdf(background_tasks: BackgroundTasks, files: List[UploadFile] 
 
 @app.get("/documents/", response_model=List[DocumentListResponse])
 async def list_documents():
+    """
+    Endpoint to list all uploaded documents and their metadata.
+    Returns:
+        List[DocumentListResponse]: List of document metadata.
+    """
     docs = []
     # Read metadata from SQLite
     cur.execute("SELECT document_id, filename, upload_date, size FROM pdf_metadata")
@@ -147,6 +222,13 @@ async def list_documents():
 
 @app.post("/query/", response_model=QueryResponse)
 async def query_document(request: QueryRequest):
+    """
+    Endpoint to query one or more documents using natural language.
+    Args:
+        request (QueryRequest): The query request containing document IDs and the query string.
+    Returns:
+        QueryResponse: The answer and source snippets.
+    """
     # Deduplicate and sort document_ids to ensure consistent cache keys
     document_ids = tuple(sorted(set(request.document_ids)))
     if len(document_ids) == 1:
@@ -212,4 +294,9 @@ async def query_document(request: QueryRequest):
 
 @app.get("/health")
 async def health_check():
+    """
+    Health check endpoint to verify the API is running.
+    Returns:
+        dict: Status of the API.
+    """
     return {"status": "healthy"}

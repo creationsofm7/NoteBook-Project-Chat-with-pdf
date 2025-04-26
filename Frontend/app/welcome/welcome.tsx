@@ -3,36 +3,63 @@ import type { FormEvent, ChangeEvent } from "react";
 import axios from "axios";
 import "../app.css";
 
+/**
+ * Base URL for the backend API.
+ */
 const API_URL = "http://localhost:8000";
 
+/**
+ * Represents a document uploaded by the user.
+ */
 type UploadedDoc = {
   document_id: string;
   filename: string;
 };
 
+/**
+ * Represents a single chat message (question and answer pair).
+ */
 type ChatMessage = {
   question: string;
   answer: string;
 };
 
+/**
+ * Main application component for NoteBookOne.
+ * Handles PDF uploads, document selection, and chat interactions with the backend.
+ */
 function App() {
+  // State for all uploaded documents fetched from the backend.
   const [uploadedDocs, setUploadedDocs] = useState<UploadedDoc[]>([]);
+  // State for currently active document IDs in the chat.
   const [documentIds, setDocumentIds] = useState<string[]>([]);
+  // State for filenames of the active documents.
   const [filenames, setFilenames] = useState<string[]>([]);
+  // State for the chat history (list of question/answer pairs).
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  // State indicating if a loading operation is in progress.
   const [loading, setLoading] = useState<boolean>(false);
+  // State for selected document IDs (for multi-select).
   const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
+  // State to indicate if the user is chatting with all documents.
   const [chatWithAll, setChatWithAll] = useState<boolean>(true);
 
+  // Refs for file input, chat input, chat container, and previous selection.
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const chatInputRef = useRef<HTMLInputElement | null>(null);
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
   const prevSelectedDocIds = useRef<string[]>([]);
 
+  /**
+   * Fetches the list of uploaded documents from the backend on mount.
+   */
   useEffect(() => {
     fetchDocuments();
   }, []);
 
+  /**
+   * Scrolls the chat container to the bottom whenever chat history changes.
+   */
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop =
@@ -40,6 +67,9 @@ function App() {
     }
   }, [chatHistory]);
 
+  /**
+   * Updates selected document IDs and filenames when toggling "chat with all".
+   */
   useEffect(() => {
     if (chatWithAll && uploadedDocs.length > 0) {
       const allIds = uploadedDocs.map((doc) => doc.document_id);
@@ -49,6 +79,9 @@ function App() {
     }
   }, [uploadedDocs, chatWithAll]);
 
+  /**
+   * Fetches the list of uploaded documents from the backend API.
+   */
   const fetchDocuments = async () => {
     try {
       const response = await axios.get<UploadedDoc[]>(`${API_URL}/documents/`);
@@ -58,6 +91,10 @@ function App() {
     }
   };
 
+  /**
+   * Handles file uploads from the user.
+   * @param e ChangeEvent from the file input.
+   */
   const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -100,6 +137,10 @@ function App() {
     }
   };
 
+  /**
+   * Handles toggling the "Chat with all" checkbox.
+   * @param checked Whether the checkbox is checked.
+   */
   const handleChatWithAllToggle = (checked: boolean) => {
     setChatWithAll(checked);
     if (checked) {
@@ -120,6 +161,10 @@ function App() {
     }
   };
 
+  /**
+   * Handles selection or deselection of a document for chat.
+   * @param docId The document ID to select/deselect.
+   */
   const handleDocumentSelection = (docId: string) => {
     if (chatWithAll) return;
     setSelectedDocIds((prev) => {
@@ -131,6 +176,9 @@ function App() {
     });
   };
 
+  /**
+   * Starts a chat session with the currently selected documents.
+   */
   const startChatWithSelected = () => {
     if (chatWithAll) {
       return;
@@ -149,6 +197,10 @@ function App() {
     setChatHistory([]);
   };
 
+  /**
+   * Sends a chat message (question) to the backend and updates chat history.
+   * @param e FormEvent from the chat input form.
+   */
   const sendMessage = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
