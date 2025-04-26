@@ -8,7 +8,7 @@ Welcome to **NoteBookOne** — the AI-powered PDF chat app that lets you upload,
 
 - **Upload Multiple PDFs** and manage your document library
 - **Chat with One or Many PDFs** at once — get instant answers!
-- **AI-Powered Q&A** using OpenAI GPT-4 and vector search
+- **AI-Powered Q&A** using OpenAI GPT-4.1 and vector search
 - **Modern UI** with React, TailwindCSS, and React Router
 - **Fast, Secure, and Scalable** — ready for local or cloud deployment
 
