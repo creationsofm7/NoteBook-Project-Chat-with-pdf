@@ -19,9 +19,27 @@ Welcome to **NoteBookOne** — the AI-powered PDF chat app that lets you upload,
 ### 1. Clone the Repo
 
 ```sh
-git clone https://github.com/your-username/notebookone.git
+git clone https://github.com/creationsofm7/notebookone.git
 cd notebookone
 ```
+
+---
+
+## ▶️ Start the Monorepo (Frontend & Backend Together)
+
+From the project root, you can start both the frontend and backend at once:
+
+```sh
+npm install
+npm run dev
+```
+
+- This will launch both the frontend and backend in parallel.
+- Make sure you have set up your environment variables as described above.
+
+---
+
+## OR
 
 ### 2. Install Dependencies
 
@@ -61,7 +79,7 @@ npm run dev
 
 - Visit [http://localhost:5173](http://localhost:5173) to use the app!
 
----
+
 
 ## 🐳 Docker (Optional)
 

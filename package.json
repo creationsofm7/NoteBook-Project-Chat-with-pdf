@@ -5,9 +5,13 @@
     "Frontend"
   ],
   "scripts": {
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
     "dev:frontend": "npm --prefix Frontend run dev",
     "build:frontend": "npm --prefix Frontend run build",
-    "dev:backend": "cd Backend && uvicorn fastapi_app:app --reload",
+    "dev:backend": "cd Backend && (if not exist .venv (python -m venv .venv)) && (call .venv\\Scripts\\activate || source .venv/bin/activate) && uvicorn fastapi_app:app --reload",
     "build:backend": "echo 'No build step for backend'"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
   }
 }
