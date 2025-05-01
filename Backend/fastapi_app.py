@@ -256,11 +256,14 @@ async def query_document(request: QueryRequest):
     
     # Updated retrieval chain implementation
     retriever = vs.as_retriever(search_type="similarity", search_kwargs={"k": 4})
-    llm = ChatOpenAI(temperature=0.2, model="gpt-4.1-mini")
+    llm = ChatOpenAI(temperature=0.2, model="gpt-4o")
     
     # Create system prompt for the retrieval chain
     system_prompt = """
-Answer the user question based on the following context. Return the output in **Markdown format** that can be **cleanly rendered in a React Markdown compiler** on the front end. 
+Answer the user question based on the following context.
+ Return the output in **CommonMark** that is parsed using micromark
+ that can be **cleanly rendered in a React Markdown compiler** on the front end. 
+ answer should fit in a message box, make line breaks accordingly.
 {context}
 """
     prompt = ChatPromptTemplate.from_messages([
@@ -292,6 +295,29 @@ Answer the user question based on the following context. Return the output in **
                   for doc in source_documents]
     
     return {"answer": answer, "sources": sources}
+
+@app.delete("/documents/{document_id}")
+async def delete_document(document_id: str):
+    """
+    Endpoint to delete a document and its metadata.
+    Args:
+        document_id (str): Unique identifier for the document.
+    Returns:
+        dict: Confirmation message.
+    Raises:
+        HTTPException: If the document does not exist.
+    """
+    # Delete from SQLite
+    cur.execute("DELETE FROM pdf_metadata WHERE document_id = ?", (document_id,))
+    conn.commit()
+    
+    # Remove files and directories
+    if os.path.exists(f"uploads/{document_id}"):
+        shutil.rmtree(f"uploads/{document_id}")
+    if os.path.exists(f"embeddings/{document_id}"):
+        shutil.rmtree(f"embeddings/{document_id}")
+    
+    return {"message": f"Document {document_id} deleted successfully"}
 
 @app.get("/health")
 async def health_check():

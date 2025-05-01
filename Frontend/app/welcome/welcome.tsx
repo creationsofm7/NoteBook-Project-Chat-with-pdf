@@ -4,6 +4,7 @@ import axios from "axios";
 import Markdown from 'react-markdown'
 import "../app.css";
 import remarkGfm from "remark-gfm";
+import { Delete, Trash2Icon } from "lucide-react";
 
 /**
  * Base URL for the backend API.
@@ -78,8 +79,47 @@ function App() {
       setSelectedDocIds(allIds);
       setDocumentIds(allIds);
       setFilenames(uploadedDocs.map((doc) => doc.filename));
+      setChatHistory([]);
     }
   }, [uploadedDocs, chatWithAll]);
+
+  /**
+   * Handles selection or deselection of a document for chat.
+   * @param docId The document ID to select/deselect.
+   */
+  const handleDocumentSelection = (docId: string) => {
+    if (chatWithAll) return;
+    setSelectedDocIds((prev) => {
+      let newSelected;
+      if (prev.includes(docId)) {
+        newSelected = prev.filter((id) => id !== docId);
+      } else {
+        newSelected = [...prev, docId];
+      }
+      return newSelected;
+    });
+  };
+
+  /**
+   * Starts a chat session with the currently selected documents.
+   */
+  const startChatWithSelected = () => {
+    if (chatWithAll) {
+      return;
+    }
+    if (selectedDocIds.length === 0) {
+      alert("Please select at least one document to chat with.");
+      return;
+    }
+
+    const selectedFilenames = uploadedDocs
+      .filter((doc) => selectedDocIds.includes(doc.document_id))
+      .map((doc) => doc.filename);
+
+    setDocumentIds(selectedDocIds);
+    setFilenames(selectedFilenames);
+    setChatHistory([]);
+  };
 
   /**
    * Fetches the list of uploaded documents from the backend API.
@@ -164,42 +204,6 @@ function App() {
   };
 
   /**
-   * Handles selection or deselection of a document for chat.
-   * @param docId The document ID to select/deselect.
-   */
-  const handleDocumentSelection = (docId: string) => {
-    if (chatWithAll) return;
-    setSelectedDocIds((prev) => {
-      if (prev.includes(docId)) {
-        return prev.filter((id) => id !== docId);
-      } else {
-        return [...prev, docId];
-      }
-    });
-  };
-
-  /**
-   * Starts a chat session with the currently selected documents.
-   */
-  const startChatWithSelected = () => {
-    if (chatWithAll) {
-      return;
-    }
-    if (selectedDocIds.length === 0) {
-      alert("Please select at least one document to chat with.");
-      return;
-    }
-
-    const selectedFilenames = uploadedDocs
-      .filter((doc) => selectedDocIds.includes(doc.document_id))
-      .map((doc) => doc.filename);
-
-    setDocumentIds(selectedDocIds);
-    setFilenames(selectedFilenames);
-    setChatHistory([]);
-  };
-
-  /**
    * Sends a chat message (question) to the backend and updates chat history.
    * @param e FormEvent from the chat input form.
    */
@@ -244,6 +248,26 @@ function App() {
       setLoading(false);
     }
   };
+
+  /**
+   * Handles deletion of a document.
+   * @param docId The document ID to delete.
+   */
+  const handleDelete = async (docId: string) => {
+    try {
+      axios.delete(`${API_URL}/documents/${docId}/`);
+      setUploadedDocs((prev) => prev.filter((doc) => doc.document_id !== docId));
+      setDocumentIds((prev) => prev.filter((id) => id !== docId));
+      setSelectedDocIds((prev) => prev.filter((id) => id !== docId));
+      setFilenames((prev) =>
+        prev.filter((filename) => filename !== uploadedDocs.find((doc) => doc.document_id === docId)?.filename)
+    )
+
+    }
+    catch (error) {
+      console.error("Error deleting document:", error);
+    }
+  }
 
   return (
     <div className="flex flex-col min-h-screen h-screen w-screen bg-gradient-to-br from-amber-50 to-blue-50">
@@ -328,6 +352,7 @@ function App() {
                       key={doc.document_id}
                       className="p-3 flex items-center hover:bg-amber-50 transition "
                     >
+                      
                       <input
                         type="checkbox"
                         id={`doc-${doc.document_id}`}
@@ -348,6 +373,10 @@ function App() {
                             : doc.filename}
                         </span>
                       </label>
+                      <button onClick={() => handleDelete(doc.document_id)} className=" cursor-pointer text-red-500 hover:text-red-700">
+                       <Trash2Icon size={18} />
+                      </button>
+                      
                     </li>
                   ))}
                 </ul>
