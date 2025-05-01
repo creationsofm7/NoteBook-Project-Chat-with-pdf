@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import type { FormEvent, ChangeEvent } from "react";
 import axios from "axios";
+import Markdown from 'react-markdown'
 import "../app.css";
+import remarkGfm from "remark-gfm";
 
 /**
  * Base URL for the backend API.
@@ -443,7 +445,10 @@ function App() {
                   <span className="font-semibold">You:</span> {msg.question}
                 </div>
                 <div className="self-start bg-blue-50 text-blue-900 px-5 py-3 rounded-xl max-w-[70%] shadow">
-                  <span className="font-semibold">AI:</span> {msg.answer}
+                  <span className="font-semibold">AI:</span>
+                  <div className="prose prose-blue prose-sm break-words break-all max-w-screen mt-1">
+                    <Markdown  remarkPlugins={[remarkGfm]}>{msg.answer}</Markdown>
+                  </div>  
                 </div>
               </div>
             ))}

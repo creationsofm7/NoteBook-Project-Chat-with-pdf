@@ -259,9 +259,10 @@ async def query_document(request: QueryRequest):
     llm = ChatOpenAI(temperature=0.2, model="gpt-4.1-mini")
     
     # Create system prompt for the retrieval chain
-    system_prompt = """Answer the user question based on the following context:
-    {context}
-    """
+    system_prompt = """
+Answer the user question based on the following context. Return the output in **Markdown format** that can be **cleanly rendered in a React Markdown compiler** on the front end. 
+{context}
+"""
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
         ("human", "{input}")
